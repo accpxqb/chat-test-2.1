@@ -192,7 +192,7 @@ function SignIn({ onUserSignedIn }: SignInProps) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className={inputClass}
+          className={inputClass} 
         />
         <button type="submit" className={buttonClass}>登录</button>
         <button type="button" onClick={handleSignUp} className={signUpButtonClass}>注册</button>
