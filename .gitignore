@@ -25,5 +25,5 @@ dist-ssr
 
 release/
 
-.env
+ 
 node_modules
