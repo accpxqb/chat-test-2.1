@@ -1,7 +1,7 @@
 import useStore from '@store/store';
 import { useTranslation } from 'react-i18next';
 import { ChatInterface, ModelOptions,MessageInterface } from '@type/chat';
-import { getChatCompletion, getChatCompletionStream } from '@api/api';
+import { getChatCompletion, getChatCompletionStream,getChatGPTEmbedding } from '@api/api';
 import { parseEventSource } from '@api/helper';
 import { limitMessageTokens, updateTotalTokenUsed, countTokens } from '@utils/messageUtils';
 import { _defaultChatConfig } from '@constants/chat';
@@ -136,17 +136,24 @@ const useSubmit = () => {
   };
 
   const handleSubmit = async () => {
+    console.log(token_number)
+    console.log(consumed_token)
     if (token_number <= consumed_token) {
       console.log("Insufficient tokens to proceed.");
       return;
     }
     const chats = useStore.getState().chats;
+     
     if (!chats) {
       console.error("Chats are undefined");
       return; // or handle this case appropriately
     }
     const lastMessageContent = chats[currentChatIndex].messages[chats[currentChatIndex].messages.length - 1].content;
-    
+    let user_emb = await getChatGPTEmbedding(lastMessageContent,apiKey)
+    console.log(user_emb)
+    if(user_emb){
+      insertRecords("user",lastMessageContent,user_emb);
+    }
     if (checkForSensitiveWords(lastMessageContent)) {
       // Handle sensitive word case
       const updatedChats = [...chats];
@@ -156,8 +163,7 @@ const useSubmit = () => {
       });
       setChats(updatedChats);
       setGenerating(false);
-      const newTokensForLastRound = await calculateTokensForLastRound();         
-
+      const newTokensForLastRound = await calculateTokensForLastRound();
       // Update the consumed token count in the database
       await updateConsumedTokenInSupabase(newTokensForLastRound);
       return;
@@ -191,6 +197,7 @@ const useSubmit = () => {
       );
       if (messages.length === 0) throw new Error('Message exceed max token!');
 
+      
       // no api key (free)
       if (!apiKey || apiKey.length === 0) {
         // official endpoint
@@ -222,8 +229,9 @@ const useSubmit = () => {
         const reader = stream.getReader();
         let reading = true;
         let partial = '';
+        let text = '';
         while (reading && useStore.getState().generating) {
-          const { done, value } = await reader.read();
+          const { done, value } = await reader.read();         
           const result = parseEventSource(
             partial + new TextDecoder().decode(value)
           );
@@ -239,17 +247,32 @@ const useSubmit = () => {
                 const content = curr.choices[0]?.delta?.content ?? null;
                 if (content) output += content;
               }
+           
               return output;
+              
             }, '');
-
+           
             const updatedChats: ChatInterface[] = JSON.parse(
               JSON.stringify(useStore.getState().chats)
             );
+          
             const updatedMessages = updatedChats[currentChatIndex].messages;
+           
             updatedMessages[updatedMessages.length - 1].content += resultString;
+            text +=resultString
             setChats(updatedChats);
+            
           }
         }
+        
+        console.log(text)
+        let emb = await getChatGPTEmbedding(text,apiKey)
+        console.log(emb)
+
+        if(emb){
+          insertRecords("assistant",text,emb);
+        }
+
         if (useStore.getState().generating) {
           reader.cancel('Cancelled by user');
         } else {
@@ -329,9 +352,44 @@ const useSubmit = () => {
     setGenerating(false);
     
   };
+  
+ 
+   // 新增数据
+   const insertRecords = async (role:any,content:string,embedding:any) => {
+    try {
+      console.log(user)  
+      if (!user) {
+        console.log('未提供用户信息，不执行插入操作');
+        return;
+      }      
+      
+      // 数据不重复，执行插入操作
+      const dataToInsert = {
+        user_id: user.id,
+        session: 0,
+        role:role,
+        content:content,
+        embedding:embedding,
+        
+      };
 
+      const { data, error } = await supabase
+        .from('records')
+        .insert([dataToInsert]);
+         
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('插入成功:', data);
+    } catch (error) {
+      console.error('插入失败:', error);
+    }
+  };
   return { handleSubmit, error };
 };
+
 
 
 

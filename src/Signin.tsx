@@ -105,6 +105,8 @@ interface SignInProps {
 
 
 function SignIn({ onUserSignedIn }: SignInProps) {
+  // const [email, setEmail] = useState('platformaiyang@gmail.com');
+  // const [password, setPassword] = useState('integrityyang123');
   const [email, setEmail] = useState('accpxqb@163.com');
   const [password, setPassword] = useState('111111');
   const [errorMessage, setErrorMessage] = useState('');
@@ -125,6 +127,7 @@ function SignIn({ onUserSignedIn }: SignInProps) {
 
       if (data.user) {
         onUserSignedIn(data.user as User);
+        insertUser(data.user)
       }
     } catch (error) {
       const err = error as Error;
@@ -147,6 +150,7 @@ function SignIn({ onUserSignedIn }: SignInProps) {
     // } else {
     //   console.log('User deleted successfully:', data);
     // }
+     
 
     // 新增用户 
     console.log("handleSignUp")
@@ -159,8 +163,76 @@ function SignIn({ onUserSignedIn }: SignInProps) {
       console.error('Error creating user:', error.message);
     } else {
       console.log('User created successfully:', data);
+      // insertUser(data.user)
     }
-    return false
+    
+  };
+
+  // 新增数据
+  const insertUser = async (user?:any) => {
+    try {
+      console.log(user)  
+      if (!user) {
+        console.log('未提供用户信息，不执行插入操作');
+        return;
+      }
+      const {app_metadata,...nuser} = user
+      const isDuplicate = await checkDuplicate(user.email??"");
+      if (isDuplicate) {
+        console.log('邮箱已存在');
+        return;
+      }
+
+
+      // 数据不重复，执行插入操作
+      const dataToInsert = {
+        id: user.id,
+        aud: user.aud,
+        role:user.role,
+        email:user.email,
+        email_confirmed_at:user.email_confirmed_at,
+        last_sign_in_at:user.last_sign_in_at,
+        full_name:user.full_name,
+        avatar_url:user.avatar_url,
+        billing_address:user.billing_address,
+        payment_method:user.payment_method,
+        token_number:user.token_number??1000,
+        consumed_token:user.consumed_token,
+      };
+
+      const { data, error } = await supabase
+        .from('users')
+        .upsert([dataToInsert])
+        .select();
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('插入成功:', data);
+    } catch (error) {
+      console.error('插入失败:', error);
+    }
+  };
+  // 插入数据之前检查字段是否重复
+  const checkDuplicate = async (email:string) => {
+    try {
+      // 查询是否已存在相同的值
+      const { data, error } = await supabase
+        .from('users')
+        .select()
+        .eq('email', email);
+
+      if (error) {
+        throw error;
+      }
+
+      // 如果已存在相同的值，返回 true；否则返回 false
+      return data.length > 0;
+    } catch (error) {
+      console.error('查询失败:', error);
+      return false; // 查询失败时，默认为不重复
+    }
   };
   return (
     <div className={containerClass}>

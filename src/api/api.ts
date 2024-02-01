@@ -116,7 +116,40 @@ export const getChatCompletionStream = async (
   const stream = response.body;
   return stream;
 };
+// 函数：获取 ChatGPT 嵌入
+export const getChatGPTEmbedding = async   (
+  text: string,  
+  apiKey?: string,
+  customHeaders?: Record<string, string>) =>{
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...customHeaders,
+    };
+    if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  
+    if ( apiKey) {
+      headers['api-key'] = apiKey;
+  
+      
+    }
 
+    const embeddingResponse = await fetch('https://api.openai.com/v1/engines/text-embedding-ada-002/embeddings', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        input: text
+      }),
+    });
+
+  
+
+  if (!embeddingResponse.ok) {
+    throw new Error(`HTTP error! status: ${embeddingResponse.status}`);
+  }
+
+  const embeddingData = await embeddingResponse.json();
+  return embeddingData.data[0].embedding;
+}
 export const submitShareGPT = async (body: ShareGPTSubmitBodyInterface) => {
   const request = await fetch('https://sharegpt.com/api/conversations', {
     body: JSON.stringify(body),
