@@ -1,7 +1,7 @@
 import useStore from '@store/store';
 import { useTranslation } from 'react-i18next';
-import { ChatInterface, ModelOptions,MessageInterface } from '@type/chat';
-import { getChatCompletion, getChatCompletionStream,getChatGPTEmbedding } from '@api/api';
+import { ChatInterface, ModelOptions, MessageInterface } from '@type/chat';
+import { getChatCompletion, getChatCompletionStream, getChatGPTEmbedding } from '@api/api';
 import { parseEventSource } from '@api/helper';
 import { limitMessageTokens, updateTotalTokenUsed, countTokens } from '@utils/messageUtils';
 import { _defaultChatConfig } from '@constants/chat';
@@ -104,13 +104,13 @@ const useSubmit = () => {
     return countTokens(messages, model);
   };
 
-    // Function to get the last round of conversation
+  // Function to get the last round of conversation
   // Function to get the last round of conversation
   const getLastRoundMessages = (messages: MessageInterface[]) => {
     if (!messages || messages.length === 0) {
       return []; // Return an empty array if messages is undefined or empty
     }
-    
+
     if (messages.length >= 2) {
       return messages.slice(-2); // Get the last two messages
     } else {
@@ -143,16 +143,16 @@ const useSubmit = () => {
       return;
     }
     const chats = useStore.getState().chats;
-     
+    
     if (!chats) {
       console.error("Chats are undefined");
       return; // or handle this case appropriately
     }
     const lastMessageContent = chats[currentChatIndex].messages[chats[currentChatIndex].messages.length - 1].content;
-    let user_emb = await getChatGPTEmbedding(lastMessageContent,apiKey)
+    let user_emb = await getChatGPTEmbedding(lastMessageContent, apiKey)
     console.log(user_emb)
-    if(user_emb){
-      insertRecords("user",lastMessageContent,user_emb);
+    if (user_emb) {
+      insertRecords("user", lastMessageContent, user_emb,currentChatIndex);
     }
     // insertRecords("user",lastMessageContent,[0.008310022]);
     if (checkForSensitiveWords(lastMessageContent)) {
@@ -198,7 +198,7 @@ const useSubmit = () => {
       );
       if (messages.length === 0) throw new Error('Message exceed max token!');
 
-      
+
       // no api key (free)
       if (!apiKey || apiKey.length === 0) {
         // official endpoint
@@ -232,7 +232,7 @@ const useSubmit = () => {
         let partial = '';
         let text = '';
         while (reading && useStore.getState().generating) {
-          const { done, value } = await reader.read();         
+          const { done, value } = await reader.read();
           const result = parseEventSource(
             partial + new TextDecoder().decode(value)
           );
@@ -248,30 +248,30 @@ const useSubmit = () => {
                 const content = curr.choices[0]?.delta?.content ?? null;
                 if (content) output += content;
               }
-           
+
               return output;
-              
+
             }, '');
-           
+
             const updatedChats: ChatInterface[] = JSON.parse(
               JSON.stringify(useStore.getState().chats)
             );
-          
+
             const updatedMessages = updatedChats[currentChatIndex].messages;
-           
+
             updatedMessages[updatedMessages.length - 1].content += resultString;
-            text +=resultString
+            text += resultString
             setChats(updatedChats);
-            
+
           }
         }
-        
+
         // console.log(text)
-        let emb = await getChatGPTEmbedding(text,apiKey)
+        let emb = await getChatGPTEmbedding(text, apiKey)
         console.log(emb)
 
-        if(emb){
-          insertRecords("assistant",text,emb);
+        if (emb) {
+          insertRecords("assistant", text, emb,currentChatIndex);
         }
         // insertRecords("assistant",text,[0.008310022]);
         if (useStore.getState().generating) {
@@ -327,7 +327,7 @@ const useSubmit = () => {
         updatedChats[currentChatIndex].title = title;
         updatedChats[currentChatIndex].titleSet = true;
         setChats(updatedChats);
-        
+
         // update tokens used for generating title
         if (countTotalTokens) {
           const model = _defaultChatConfig.model;
@@ -341,7 +341,7 @@ const useSubmit = () => {
       await new Promise(resolve => setTimeout(resolve, 0));
 
       // Calculate tokens for the last round including the LLM's response
-      const newTokensForLastRound = await calculateTokensForLastRound();         
+      const newTokensForLastRound = await calculateTokensForLastRound();
 
       // Update the consumed token count in the database
       await updateConsumedTokenInSupabase(newTokensForLastRound);
@@ -351,33 +351,33 @@ const useSubmit = () => {
       setError(err.message);
     }
     setGenerating(false);
-    
+
   };
-  
- 
-   // 新增数据
-   const insertRecords = async (role:any,content:string,embedding:any) => {
+
+
+  // 新增数据
+  const insertRecords = async (role: any, content: string, embedding: any,session_id:number) => {
     try {
-      console.log(user)  
+      console.log(user)
       if (!user) {
         console.log('未提供用户信息，不执行插入操作');
         return;
-      }      
-      
+      }
+
       // 数据不重复，执行插入操作
       const dataToInsert = {
         user_id: user.id,
-        session_id: 0,
-        role:role,
-        content:content,
-        embedding:embedding??[],
-        
+        session_id: session_id,
+        role: role,
+        content: content,
+        embedding: embedding ?? [],
+
       };
 
       const { data, error } = await supabase
         .from('conversation_history')
         .insert([dataToInsert]);
-         
+
 
       if (error) {
         throw error;
@@ -388,6 +388,48 @@ const useSubmit = () => {
       console.error('插入失败:', error);
     }
   };
+
+  //查询向量
+  const searchSimilarConversations = async (user_id, query_session_id, query_vector) => {
+    try {
+      const { data, error } = await supabase
+        .from("conversation_history")
+        .select("content,embedding")
+        .eq("user_id", user_id)
+        .eq("session_id", query_session_id)
+        .range(0, 19);
+  
+      if (error) throw error;
+  
+      const result = data.map((ch) => ({
+        content: ch.content,
+        similarity: 1 - compareVectors(ch.embedding, query_vector),
+      })).filter(record => record.similarity > 0.5);
+  
+      return result;
+    } catch (error) {
+      console.error("Error in searchSimilarConversations:", error);
+      throw error;
+    }
+  };
+  // 函数用于比较两个向量并计算它们的相似性
+const compareVectors = (vector1, vector2) => {
+  if (vector1.length !== vector2.length) {
+    throw new Error("向量在比较时必须具有相同的长度");
+  }
+
+  // 计算余弦相似性
+  const dotProduct = vector1.reduce((sum, value, index) => sum + value * vector2[index], 0);
+  const magnitude1 = Math.sqrt(vector1.reduce((sum, value) => sum + value ** 2, 0));
+  const magnitude2 = Math.sqrt(vector2.reduce((sum, value) => sum + value ** 2, 0));
+
+  if (magnitude1 === 0 || magnitude2 === 0) {
+    throw new Error("余弦相似性计算时，向量的大小不能为零");
+  }
+
+  const similarity = dotProduct / (magnitude1 * magnitude2);
+  return similarity;
+};
   return { handleSubmit, error };
 };
 

@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { supabase } from '@utils/supabaseClient';
 import { style } from 'typestyle';
+ 
+
 
 // Define your User interface
 interface User {
@@ -111,6 +113,8 @@ function SignIn({ onUserSignedIn }: SignInProps) {
   const [password, setPassword] = useState('integrityyang123');
   const [errorMessage, setErrorMessage] = useState('');
 
+  // console.log(useStore.getState().chat)
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     console.log("handleSubmit")
     e.preventDefault();
@@ -133,6 +137,8 @@ function SignIn({ onUserSignedIn }: SignInProps) {
       const err = error as Error;
       console.error('Sign-in error:', err);
       setErrorMessage(err.message);
+      //登录成功 获取聊天记录
+
     }
   };
   const handleSignUp = async () => {

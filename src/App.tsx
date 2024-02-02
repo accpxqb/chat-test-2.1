@@ -11,6 +11,10 @@ import ApiPopup from '@components/ApiPopup';
 import Toast from '@components/Toast';
 import { supabase } from '@utils/supabaseClient'; // Adjust the import path as necessary
 import sensitiveWords from '@utils/sensitive_words_lines.json';
+ 
+
+ 
+
 
 interface User {
   id: string; // UUID from Supabase auth
@@ -42,7 +46,7 @@ function App() {
   const setTheme = useStore((state) => state.setTheme);
   const setApiKey = useStore((state) => state.setApiKey);
   const setCurrentChatIndex = useStore((state) => state.setCurrentChatIndex);
-
+   
   useEffect(() => {
     document.documentElement.lang = i18n.language;
     i18n.on('languageChanged', (lng) => {
@@ -69,10 +73,62 @@ function App() {
     }
   };
 
+  //加载历史记录
+  const [list, setList] = useState([]);
+  const selectHistoryList = async (userId) => {
+    console.log(userId)
+    try {
+      const { data, error } = await supabase
+        .from('conversation_history')  // 替换为你的实际表名
+        .select()
+        .eq('user_id', userId)  // 根据 user_id 进行查询
+      if (error) {
+        throw error;
+      }
+      console.log('查询结果:', data);
+      //根据session_id 分组
+      const groupedData = data.reduce((groups, item) => {
+        const group = groups.find(g => g.session_id === item.session_id);
+      
+        if (group) {
+          group.items.push(item);
+        } else {
+          groups.push({ session_id: item.session_id, items: [item] });
+        }
+      
+        return groups;
+      }, []);
+      console.log(groupedData)
+      setList(data)
+      const chats = useStore.getState().chats;
+      let oldChats:ChatInterface[] = []
+      console.log(oldChats)
+      groupedData.forEach(session=>{
+        chats[session.session_id].messages=[]
+        session.items.forEach((msg: { role: any; content: any; })=>{          
+          // console.log(msg)
+          chats[session.session_id].messages.push({role:msg.role,content:msg.content})
+        })
+      })
+      setChats(chats);
+
+      console.log(chats)
+
+    
+    } catch (error) {
+      console.error('查询出错:', error);
+    }
+  }
+  
+  
   useEffect(() => {
     if (user && !isLoading) {
       // legacy local storage
       const oldChats = localStorage.getItem('chats');
+      console.log("oldChats",oldChats)
+      selectHistoryList(user.id)
+       
+       
       const apiKey = localStorage.getItem('apiKey');
       const theme = localStorage.getItem('theme');
 
@@ -102,6 +158,9 @@ function App() {
         localStorage.removeItem('chats');
       } else {
         const chats = useStore.getState().chats;
+        console.log(chats)
+        console.log(useStore.getState())
+
         const currentChatIndex = useStore.getState().currentChatIndex;
         if (!chats || chats.length === 0) {
           initialiseNewChat();

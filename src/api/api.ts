@@ -169,3 +169,7 @@ export const submitShareGPT = async (body: ShareGPTSubmitBodyInterface) => {
   const url = `https://shareg.pt/${id}`;
   window.open(url, '_blank');
 };
+
+
+
+ 
