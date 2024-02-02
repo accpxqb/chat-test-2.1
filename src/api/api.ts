@@ -133,11 +133,12 @@ export const getChatGPTEmbedding = async   (
       
     }
 
-    const embeddingResponse = await fetch('https://api.openai.com/v1/engines/text-embedding-ada-002/embeddings', {
+    const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        input: text
+        input: text,
+        "model": "text-embedding-ada-002"
       }),
     });
 
@@ -150,6 +151,10 @@ export const getChatGPTEmbedding = async   (
   const embeddingData = await embeddingResponse.json();
   return embeddingData.data[0].embedding;
 }
+
+ 
+
+
 export const submitShareGPT = async (body: ShareGPTSubmitBodyInterface) => {
   const request = await fetch('https://sharegpt.com/api/conversations', {
     body: JSON.stringify(body),

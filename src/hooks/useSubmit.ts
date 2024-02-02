@@ -154,6 +154,7 @@ const useSubmit = () => {
     if(user_emb){
       insertRecords("user",lastMessageContent,user_emb);
     }
+    // insertRecords("user",lastMessageContent,[0.008310022]);
     if (checkForSensitiveWords(lastMessageContent)) {
       // Handle sensitive word case
       const updatedChats = [...chats];
@@ -265,14 +266,14 @@ const useSubmit = () => {
           }
         }
         
-        console.log(text)
+        // console.log(text)
         let emb = await getChatGPTEmbedding(text,apiKey)
         console.log(emb)
 
         if(emb){
           insertRecords("assistant",text,emb);
         }
-
+        // insertRecords("assistant",text,[0.008310022]);
         if (useStore.getState().generating) {
           reader.cancel('Cancelled by user');
         } else {
@@ -366,15 +367,15 @@ const useSubmit = () => {
       // 数据不重复，执行插入操作
       const dataToInsert = {
         user_id: user.id,
-        session: 0,
+        session_id: 0,
         role:role,
         content:content,
-        embedding:embedding,
+        embedding:embedding??[],
         
       };
 
       const { data, error } = await supabase
-        .from('records')
+        .from('conversation_history')
         .insert([dataToInsert]);
          
 

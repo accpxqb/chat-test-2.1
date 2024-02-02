@@ -107,8 +107,8 @@ interface SignInProps {
 function SignIn({ onUserSignedIn }: SignInProps) {
   // const [email, setEmail] = useState('platformaiyang@gmail.com');
   // const [password, setPassword] = useState('integrityyang123');
-  const [email, setEmail] = useState('accpxqb@163.com');
-  const [password, setPassword] = useState('111111');
+  const [email, setEmail] = useState('platformaiyang@gmail.com');
+  const [password, setPassword] = useState('integrityyang123');
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -127,7 +127,7 @@ function SignIn({ onUserSignedIn }: SignInProps) {
 
       if (data.user) {
         onUserSignedIn(data.user as User);
-        insertUser(data.user)
+        // insertUser(data.user)
       }
     } catch (error) {
       const err = error as Error;
