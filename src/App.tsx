@@ -73,8 +73,7 @@ function App() {
     }
   };
 
-  //加载历史记录
-  const [list, setList] = useState([]);
+  //加载历史记录  
   const selectHistoryList = async (userId) => {
     console.log(userId)
     try {
@@ -98,19 +97,19 @@ function App() {
       
         return groups;
       }, []);
-      console.log(groupedData)
-      setList(data)
+      console.log(groupedData)       
       const chats = useStore.getState().chats;
-      let oldChats:ChatInterface[] = []
-      console.log(oldChats)
-      groupedData.forEach(session=>{
-        chats[session.session_id].messages=[]
-        session.items.forEach((msg: { role: any; content: any; })=>{          
-          // console.log(msg)
-          chats[session.session_id].messages.push({role:msg.role,content:msg.content})
+      if(chats&&groupedData.length>0){
+        groupedData.forEach(session=>{
+          chats[session.session_id].messages=[]
+          session.items.forEach((msg: { role: any; content: any; })=>{          
+            // console.log(msg)
+            chats[session.session_id].messages.push({role:msg.role,content:msg.content})
+          })
         })
-      })
-      setChats(chats);
+        setChats(chats);
+      }
+     
 
       console.log(chats)
 
