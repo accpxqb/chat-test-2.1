@@ -10,8 +10,7 @@ import { Theme } from '@type/theme';
 import ApiPopup from '@components/ApiPopup';
 import Toast from '@components/Toast';
 import { supabase } from '@utils/supabaseClient'; // Adjust the import path as necessary
-import sensitiveWords from '@utils/sensitive_words_lines.json';
- 
+import sensitiveWords from '@utils/sensitive_words_lines.json'; 
 
  
 
@@ -46,7 +45,8 @@ function App() {
   const setTheme = useStore((state) => state.setTheme);
   const setApiKey = useStore((state) => state.setApiKey);
   const setCurrentChatIndex = useStore((state) => state.setCurrentChatIndex);
-   
+  
+ 
   useEffect(() => {
     document.documentElement.lang = i18n.language;
     i18n.on('languageChanged', (lng) => {
@@ -99,9 +99,13 @@ function App() {
       }, []);
       console.log(groupedData)       
       const chats = useStore.getState().chats;
+      console.log(chats)  
       if(chats&&groupedData.length>0){
         groupedData.forEach(session=>{
-          chats[session.session_id].messages=[]
+          if(chats[session.session_id]){
+            chats[session.session_id].messages=[]
+          } 
+          
           session.items.forEach((msg: { role: any; content: any; })=>{          
             // console.log(msg)
             chats[session.session_id].messages.push({role:msg.role,content:msg.content})

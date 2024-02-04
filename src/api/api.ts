@@ -152,7 +152,27 @@ export const getChatGPTEmbedding = async   (
   return embeddingData.data[0].embedding;
 }
 
- 
+const OPENAI_ENDPOINT = 'https://api.openai.com/v1/engines/text-embedding-ada-002/embeddings'; // OpenAI's text-embedding endpoint
+type EmbeddingResponse = number[];
+
+export const convertTextToOpenAIEmbedding = async function convertTextToOpenAIEmbedding(text: string,apiKey): Promise<EmbeddingResponse> {
+  const response = await fetch(OPENAI_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ input: text })
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.data[0].embedding; 
+}
+
  
 
 export const submitShareGPT = async (body: ShareGPTSubmitBodyInterface) => {

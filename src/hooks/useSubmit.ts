@@ -1,7 +1,7 @@
 import useStore from '@store/store';
 import { useTranslation } from 'react-i18next';
 import { ChatInterface, ModelOptions, MessageInterface } from '@type/chat';
-import { getChatCompletion, getChatCompletionStream, getChatGPTEmbedding } from '@api/api';
+import { getChatCompletion, getChatCompletionStream, getChatGPTEmbedding,convertTextToOpenAIEmbedding } from '@api/api';
 import { parseEventSource } from '@api/helper';
 import { limitMessageTokens, updateTotalTokenUsed, countTokens } from '@utils/messageUtils';
 import { _defaultChatConfig } from '@constants/chat';
@@ -149,10 +149,14 @@ const useSubmit = () => {
       return; // or handle this case appropriately
     }
     const lastMessageContent = chats[currentChatIndex].messages[chats[currentChatIndex].messages.length - 1].content;
-    let user_emb = await getChatGPTEmbedding(lastMessageContent, apiKey)
+    let user_emb = await convertTextToOpenAIEmbedding(lastMessageContent, apiKey)
     console.log(user_emb)
     if (user_emb) {
       insertRecords("user", lastMessageContent, user_emb,currentChatIndex);
+
+      //查询历史相关的信息
+      const similarConversations= await searchSimilarConversations(currentChatIndex,user_emb)
+      console.log(similarConversations)
     }
     // insertRecords("user",lastMessageContent,[0.008310022]);
     if (checkForSensitiveWords(lastMessageContent)) {
@@ -267,7 +271,7 @@ const useSubmit = () => {
         }
 
         // console.log(text)
-        let emb = await getChatGPTEmbedding(text, apiKey)
+        let emb = await convertTextToOpenAIEmbedding(text, apiKey)
         console.log(emb)
 
         if (emb) {
@@ -390,46 +394,23 @@ const useSubmit = () => {
   };
 
   //查询向量
-  const searchSimilarConversations = async (user_id, query_session_id, query_vector) => {
-    try {
-      const { data, error } = await supabase
-        .from("conversation_history")
-        .select("content,embedding")
-        .eq("user_id", user_id)
-        .eq("session_id", query_session_id)
-        .range(0, 19);
-  
-      if (error) throw error;
-  
-      const result = data.map((ch) => ({
-        content: ch.content,
-        similarity: 1 - compareVectors(ch.embedding, query_vector),
-      })).filter(record => record.similarity > 0.5);
-  
-      return result;
-    } catch (error) {
-      console.error("Error in searchSimilarConversations:", error);
-      throw error;
+  const searchSimilarConversations = async  (sessionId, queryVector)=> {
+    const { data, error } = await supabase.rpc('search_similar_conversations', {
+      p_user_id: user.id,
+      p_query_session_id: sessionId,
+      p_query_vector: queryVector,
+    });   
+    console.log(queryVector)
+    console.log(queryVector.length)
+    if (error) {
+      console.error('Error calling search_similar_conversations:', error);
+      return null;
     }
-  };
-  // 函数用于比较两个向量并计算它们的相似性
-const compareVectors = (vector1, vector2) => {
-  if (vector1.length !== vector2.length) {
-    throw new Error("向量在比较时必须具有相同的长度");
+    console.log(data)
+    return data;
   }
 
-  // 计算余弦相似性
-  const dotProduct = vector1.reduce((sum, value, index) => sum + value * vector2[index], 0);
-  const magnitude1 = Math.sqrt(vector1.reduce((sum, value) => sum + value ** 2, 0));
-  const magnitude2 = Math.sqrt(vector2.reduce((sum, value) => sum + value ** 2, 0));
-
-  if (magnitude1 === 0 || magnitude2 === 0) {
-    throw new Error("余弦相似性计算时，向量的大小不能为零");
-  }
-
-  const similarity = dotProduct / (magnitude1 * magnitude2);
-  return similarity;
-};
+ 
   return { handleSubmit, error };
 };
 
