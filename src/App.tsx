@@ -102,14 +102,15 @@ function App() {
       console.log(chats)  
       if(chats&&groupedData.length>0){
         groupedData.forEach(session=>{
-          if(chats.length>session.session_id){
+          if(chats[session.session_id]){             
             chats[session.session_id].messages=[]
+            session.items.forEach((msg: { role: any; content: any; })=>{          
+              // console.log(msg)
+              chats[session.session_id].messages.push({role:msg.role,content:msg.content})
+            })
           } 
           
-          session.items.forEach((msg: { role: any; content: any; })=>{          
-            // console.log(msg)
-            chats[session.session_id].messages.push({role:msg.role,content:msg.content})
-          })
+          
         })
         setChats(chats);
       }
