@@ -102,7 +102,7 @@ function App() {
       console.log(chats)  
       if(chats&&groupedData.length>0){
         groupedData.forEach(session=>{
-          if(chats[session.session_id]){
+          if(chats.length>session.session_id){
             chats[session.session_id].messages=[]
           } 
           
