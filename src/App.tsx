@@ -100,8 +100,6 @@ function App() {
         throw error;
       }
       console.log('查询结果:', data);
-      console.log(user.ChatPanel)
-
       
 
       //根据session_id 分组
