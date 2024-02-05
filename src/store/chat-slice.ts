@@ -16,7 +16,7 @@ export interface ChatSlice {
   error: string;
   folders: FolderCollection;
   setMessages: (messages: MessageInterface[]) => void;
-  setChats: (chats: ChatInterface[]) => void;
+  setChats: (chats: ChatInterface[],noSave?:any) => void;
   setCurrentChatIndex: (currentChatIndex: number) => void;
   setGenerating: (generating: boolean) => void;
   setError: (error: string) => void;
@@ -36,14 +36,15 @@ export const createChatSlice: StoreSlice<ChatSlice> = (set, get) => ({
       messages: messages,
     }));
   },
-  setChats: (chats: ChatInterface[]) => {
+  setChats: (chats: ChatInterface[],noSave?:any) => {
     
     set((prev: ChatSlice) => ({
       ...prev,
       chats: chats,
     }));
-    
-    saveUserChats(chats,userid)
+    if(!noSave){
+      saveUserChats(chats,userid)
+    }
   
   },
   setCurrentChatIndex: (currentChatIndex: number) => {

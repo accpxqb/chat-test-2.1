@@ -152,7 +152,7 @@ const useSubmit = () => {
     let user_emb = await convertTextToOpenAIEmbedding(lastMessageContent, apiKey)
     console.log(user_emb)
     if (user_emb) {
-      insertRecords("user", lastMessageContent, user_emb,currentChatIndex);
+      insertRecords("user", lastMessageContent, user_emb,currentChatIndex,chats[currentChatIndex].id);
 
       //查询历史相关的信息
       const similarConversations= await searchSimilarConversations(currentChatIndex,user_emb)
@@ -166,7 +166,7 @@ const useSubmit = () => {
         role: 'assistant',
         content: '请您重新提问，谢谢！',
       });
-      setChats(updatedChats);
+      setChats(updatedChats,true);
       setGenerating(false);
       const newTokensForLastRound = await calculateTokensForLastRound();
       // Update the consumed token count in the database
@@ -187,7 +187,7 @@ const useSubmit = () => {
       content: '',
     });
 
-    setChats(updatedChats);
+    setChats(updatedChats,true);
     setGenerating(true);
 
     try {
@@ -265,7 +265,7 @@ const useSubmit = () => {
 
             updatedMessages[updatedMessages.length - 1].content += resultString;
             text += resultString
-            setChats(updatedChats);
+            setChats(updatedChats,true);
 
           }
         }
@@ -275,7 +275,7 @@ const useSubmit = () => {
         console.log(emb)
 
         if (emb) {
-          insertRecords("assistant", text, emb,currentChatIndex);
+          insertRecords("assistant", text, emb,currentChatIndex,updatedChats[currentChatIndex].id);
         }
         // insertRecords("assistant",text,[0.008310022]);
         if (useStore.getState().generating) {
@@ -330,7 +330,7 @@ const useSubmit = () => {
         );
         updatedChats[currentChatIndex].title = title;
         updatedChats[currentChatIndex].titleSet = true;
-        setChats(updatedChats);
+        setChats(updatedChats,true);
 
         // update tokens used for generating title
         if (countTotalTokens) {
@@ -360,7 +360,7 @@ const useSubmit = () => {
 
 
   // 新增数据
-  const insertRecords = async (role: any, content: string, embedding: any,session_id:number) => {
+  const insertRecords = async (role: any, content: string, embedding: any,session_id:number,chatId) => {
     try {
       console.log(user)
       if (!user) {
@@ -375,6 +375,7 @@ const useSubmit = () => {
         role: role,
         content: content,
         embedding: embedding ?? [],
+        chat_id:chatId
 
       };
 

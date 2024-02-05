@@ -102,14 +102,14 @@ function App() {
       console.log('查询结果:', data);
       
 
-      //根据session_id 分组
+      //根据chat_id 分组
       const groupedData = data.reduce((groups, item) => {
-        const group = groups.find(g => g.session_id === item.session_id);
+        const group = groups.find(g => g.chat_id === item.chat_id);
 
         if (group) {
           group.items.push(item);
         } else {
-          groups.push({ session_id: item.session_id, items: [item] });
+          groups.push({ chat_id: item.chat_id, items: [item] });
         }
 
         return groups;
@@ -120,18 +120,24 @@ function App() {
       }
       console.log(chats)
       if (chats && groupedData.length > 0) {
-        groupedData.forEach(session => {
-          if (chats[session.session_id]) {
-            chats[session.session_id].messages = []
-            session.items.forEach((msg: { role: any; content: any; }) => {
-              // console.log(msg)
-              chats[session.session_id].messages.push({ role: msg.role, content: msg.content })
+        chats.map(chat=>{
+          let session = groupedData.find(x=>x.chat_id==chat.id)
+          chat.messages=[{role:"system",content:"Welcome to PlatformAI, where guidance and support are at your fingertips. Choose from our three specialized virtual companions: Doctor, Mentor, and ChristianGPT (Mormon). Each one is tailored to provide you with insights and assistance unique to their field of expertise. Whether you seek health advice, personal development guidance, or spiritual understanding, your journey towards enrichment starts here. Please select your companion to begin."}]
+
+          if(session){
+            console.log( session.items)
+            session.items.forEach((msg) => {
+             console.log(msg)
+             console.log({ role: msg.role, content: msg.content })
+              chat.messages.push({ role: msg.role, content: msg.content })
+            
             })
+            console.log(chat)
+
           }
-
-
         })
-        setChats(chats);
+       
+        setChats([...chats]);
       }
 
 
