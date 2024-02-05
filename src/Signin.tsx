@@ -21,8 +21,7 @@ interface User {
   token_number?: number; // Optional, from your custom table
   consumed_token?: number; // Optional, from your custom table
   app_metadata?: { provider?: string; providers?: string[] }; // Metadata, optional
-  ChatPanel?:object
-}
+ }
 
 // Updated styles using TypeStyle
 const welcomeMessageClass = style({
