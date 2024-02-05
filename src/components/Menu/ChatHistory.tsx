@@ -8,6 +8,7 @@ import DeleteIcon from '@icon/DeleteIcon';
 import EditIcon from '@icon/EditIcon';
 import TickIcon from '@icon/TickIcon';
 import useStore from '@store/store';
+import {saveUserChats} from "@src/utils/users"
 
 const ChatHistoryClass = {
   normal:
@@ -27,6 +28,7 @@ const ChatHistory = React.memo(
     const setChats = useStore((state) => state.setChats);
     const active = useStore((state) => state.currentChatIndex === chatIndex);
     const generating = useStore((state) => state.generating);
+    const user = useStore((state) => state.user);
 
     const [isDelete, setIsDelete] = useState<boolean>(false);
     const [isEdit, setIsEdit] = useState<boolean>(false);
@@ -38,7 +40,8 @@ const ChatHistory = React.memo(
         JSON.stringify(useStore.getState().chats)
       );
       updatedChats[chatIndex].title = _title;
-      setChats(updatedChats);
+      setChats(updatedChats,user);
+      // saveUserChats(updatedChats,user)
       setIsEdit(false);
     };
 

@@ -21,6 +21,7 @@ interface User {
   token_number?: number; // Optional, from your custom table
   consumed_token?: number; // Optional, from your custom table
   app_metadata?: { provider?: string; providers?: string[] }; // Metadata, optional
+  ChatPanel?:object
 }
 
 // Updated styles using TypeStyle
@@ -131,6 +132,7 @@ function SignIn({ onUserSignedIn }: SignInProps) {
 
       if (data.user) {
         onUserSignedIn(data.user as User);
+        localStorage.setItem('userid', data.user.id);
         // insertUser(data.user)
       }
     } catch (error) {

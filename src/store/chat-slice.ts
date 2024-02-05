@@ -1,5 +1,12 @@
 import { StoreSlice } from './store';
-import { ChatInterface, FolderCollection, MessageInterface } from '@type/chat';
+import { ChatInterface, FolderCollection, MessageInterface } from '@type/chat';  
+ 
+import {saveUserChats} from "@src/utils/users"
+
+
+
+ const userid=localStorage.getItem("userid")
+ 
 
 export interface ChatSlice {
   messages: MessageInterface[];
@@ -22,6 +29,7 @@ export const createChatSlice: StoreSlice<ChatSlice> = (set, get) => ({
   generating: false,
   error: '',
   folders: {},
+
   setMessages: (messages: MessageInterface[]) => {
     set((prev: ChatSlice) => ({
       ...prev,
@@ -29,10 +37,14 @@ export const createChatSlice: StoreSlice<ChatSlice> = (set, get) => ({
     }));
   },
   setChats: (chats: ChatInterface[]) => {
+    
     set((prev: ChatSlice) => ({
       ...prev,
       chats: chats,
     }));
+    
+    saveUserChats(chats,userid)
+  
   },
   setCurrentChatIndex: (currentChatIndex: number) => {
     set((prev: ChatSlice) => ({

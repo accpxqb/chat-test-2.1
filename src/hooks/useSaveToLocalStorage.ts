@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import useStore from '@store/store';
 
+
 const useSaveToLocalStorage = () => {
+  console.log("useSaveToLocalStorage")
   const chatsRef = useRef(useStore.getState().chats);
 
   useEffect(() => {
@@ -9,6 +11,8 @@ const useSaveToLocalStorage = () => {
       if (chatsRef && chatsRef.current !== state.chats) {
         chatsRef.current = state.chats;
         localStorage.setItem('chats', JSON.stringify(state.chats));
+         
+
       }
     });
 
@@ -16,4 +20,5 @@ const useSaveToLocalStorage = () => {
   }, []);
 };
 
+ 
 export default useSaveToLocalStorage;
