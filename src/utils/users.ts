@@ -7,6 +7,9 @@ export const saveUserChats = async (chats,userid) => {
         console.log('未提供用户信息，不执行插入操作');
         return;
     }
+    chats.forEach(chat => {
+        chat.message=[]
+    });
     const { data, error } = await supabase
         .from('users')
         .update([
